@@ -17,10 +17,12 @@ if sys.platform == "win32":
 
 import json
 import logging
+from pathlib import Path
 
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
-from fastapi.responses import JSONResponse
+from fastapi.responses import FileResponse, JSONResponse
+from fastapi.staticfiles import StaticFiles
 from langgraph.types import Command
 from sse_starlette.sse import EventSourceResponse
 
@@ -111,6 +113,17 @@ async def ask(question: str, thread_id: str):
 async def resume(thread_id: str, approved: bool = False):
     """Resume a run that paused for human approval."""
     return EventSourceResponse(_agent_sse(Command(resume={"approved": approved}), thread_id))
+
+
+STATIC_DIR = Path(__file__).resolve().parent.parent / "static"
+
+
+@app.get("/")
+async def index() -> FileResponse:
+    return FileResponse(STATIC_DIR / "index.html")
+
+
+app.mount("/static", StaticFiles(directory=str(STATIC_DIR)), name="static")
 
 
 @app.on_event("shutdown")

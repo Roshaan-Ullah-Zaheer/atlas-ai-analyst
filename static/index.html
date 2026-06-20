@@ -1,0 +1,96 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="dark">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Atlas — Multi-Agent AI Analyst</title>
+  <meta name="description" content="Ask your business data anything in plain English. A team of agents plans, queries SQL + a vector store through an MCP server, self-corrects, and writes a charted, sourced answer." />
+
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet" />
+
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script>
+    tailwind.config = { corePlugins: { preflight: true }, theme: { extend: { fontFamily: {
+      sans: ['Inter', 'system-ui', 'sans-serif'], mono: ['"JetBrains Mono"', 'ui-monospace', 'monospace'] } } } };
+  </script>
+  <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
+  <link rel="stylesheet" href="/static/styles.css" />
+</head>
+
+<body>
+  <div class="app">
+
+    <!-- ============ HEADER ============ -->
+    <header class="topbar">
+      <div class="brand">
+        <div class="logo">A</div>
+        <div>
+          <div class="brand-name">Atlas</div>
+          <div class="brand-sub">Multi-Agent AI Analyst</div>
+        </div>
+      </div>
+      <div class="topbar-right">
+        <div class="techbadges">
+          <span class="badge">LangGraph</span>
+          <span class="badge">MCP</span>
+          <span class="badge">pgvector</span>
+          <span class="badge">LangSmith</span>
+        </div>
+        <button id="theme-toggle" class="icon-btn" title="Toggle light / dark" aria-label="Toggle theme">
+          <svg class="ico-moon" viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"/></svg>
+          <svg class="ico-sun" viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="4"/><path d="M12 2v2M12 20v2M4.93 4.93l1.41 1.41M17.66 17.66l1.41 1.41M2 12h2M20 12h2M4.93 19.07l1.41-1.41M17.66 6.34l1.41-1.41"/></svg>
+        </button>
+      </div>
+    </header>
+
+    <div class="workspace">
+
+      <!-- ============ LEFT: SCHEMA EXPLORER ============ -->
+      <aside class="sidebar">
+        <div class="sidebar-section">
+          <div class="sidebar-head">Schema</div>
+          <div id="schema-list" class="schema-list">
+            <div class="muted small">Loading schema…</div>
+          </div>
+        </div>
+        <div class="sidebar-section">
+          <div class="sidebar-head">Try asking</div>
+          <div id="samples" class="samples"></div>
+        </div>
+        <div class="sidebar-foot small muted">
+          Provider-agnostic demo on free tiers. The same architecture runs on Claude / OpenAI + managed pgvector in production.
+        </div>
+      </aside>
+
+      <!-- ============ MAIN ============ -->
+      <main class="main">
+        <div id="thread" class="thread">
+          <!-- Empty state -->
+          <div id="empty" class="empty">
+            <div class="empty-mark">A</div>
+            <h1>Ask your business data anything</h1>
+            <p class="muted">A team of agents plans, writes SQL, runs it through an MCP server, checks its own work, and answers — with a chart and the exact query it ran. Pick a question on the left or type your own.</p>
+          </div>
+          <!-- Turns injected here -->
+        </div>
+
+        <div class="composer-wrap">
+          <form id="ask-form" class="composer">
+            <input id="q" type="text" autocomplete="off" placeholder="e.g. Which product categories drove the most revenue?" />
+            <button id="ask-btn" type="submit" class="run">
+              <span class="run-label">Analyze</span>
+              <span class="run-spin" hidden></span>
+            </button>
+          </form>
+          <div class="composer-hint small muted">Atlas runs read-only queries and pauses for approval before anything sensitive.</div>
+        </div>
+      </main>
+    </div>
+  </div>
+
+  <script src="/static/app.js"></script>
+</body>
+</html>
