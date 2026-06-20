@@ -21,6 +21,7 @@ langchain-mcp-adapters
 
 # Database: PostgreSQL + pgvector
 psycopg[binary]
+psycopg-pool
 pgvector
 numpy
 
