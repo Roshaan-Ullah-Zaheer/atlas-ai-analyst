@@ -1,0 +1,31 @@
+# Web / API
+fastapi
+uvicorn[standard]
+sse-starlette
+python-dotenv
+httpx
+
+# Agent orchestration
+langgraph
+langchain
+langchain-core
+pydantic
+
+# LLM providers (provider-agnostic: Gemini -> Groq), + embeddings
+langchain-google-genai
+langchain-groq
+
+# MCP: custom server + agent-as-client
+mcp
+langchain-mcp-adapters
+
+# Database: PostgreSQL + pgvector
+psycopg[binary]
+pgvector
+numpy
+
+# Observability
+langsmith
+
+# NOTE: versions are pinned during the build/test phase once verified against
+# a live Neon instance, so the Docker image is reproducible.
