@@ -15,13 +15,17 @@ import sys
 if sys.platform == "win32":
     asyncio.set_event_loop_policy(asyncio.WindowsSelectorEventLoopPolicy())
 
+import json
 import logging
 
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import JSONResponse
+from langgraph.types import Command
+from sse_starlette.sse import EventSourceResponse
 
 from . import config, db
+from .agent.graph import graph
 from .mcp_server import mcp
 
 logging.basicConfig(level=logging.INFO, format="%(asctime)s %(levelname)s [%(name)s] %(message)s")
@@ -49,6 +53,64 @@ async def health() -> dict:
 async def api_schema() -> JSONResponse:
     """The database schema, for the frontend's schema explorer."""
     return JSONResponse(await db.get_schema())
+
+
+def _events_from_update(node: str, update: dict) -> list[dict]:
+    """Map a LangGraph node update to UI-facing SSE events."""
+    update = update or {}
+    if node == "plan":
+        plan = update.get("plan", {})
+        return [{"type": "plan", "intent": plan.get("intent"), "route": update.get("route"), "steps": plan.get("steps", [])}]
+    if node == "generate_sql":
+        return [{"type": "sql", "sql": update.get("sql"), "rationale": update.get("sql_rationale"), "attempt": update.get("sql_attempts")}]
+    if node == "approval":
+        if update.get("needs_approval") is False:
+            return [{"type": "approved", "auto": True}]
+        return [{"type": "approved", "auto": False, "approved": update.get("approved")}]
+    if node == "execute_sql":
+        r = update.get("result", {})
+        if "error" in r:
+            return [{"type": "result_error", "error": r["error"]}]
+        return [{"type": "result", "columns": r.get("columns"), "rows": r.get("rows"), "row_count": r.get("row_count"), "truncated": r.get("truncated")}]
+    if node == "validate":
+        rv = update.get("review", {})
+        return [{"type": "review", "answers_question": rv.get("answers_question"), "issue": rv.get("issue")}]
+    if node == "search_docs":
+        return [{"type": "sources", "docs": update.get("docs", [])}]
+    if node == "visualize":
+        return [{"type": "chart", "spec": update.get("chart", {})}]
+    if node == "answer":
+        return [{"type": "answer", "text": update.get("answer", "")}]
+    return []
+
+
+async def _agent_sse(inp, thread_id: str):
+    cfg = {"configurable": {"thread_id": thread_id}}
+    try:
+        async for chunk in graph.astream(inp, cfg, stream_mode="updates"):
+            for node, update in chunk.items():
+                if node == "__interrupt__":
+                    payload = (update[0].value if isinstance(update, (list, tuple)) else update.value) or {}
+                    yield {"data": json.dumps({"type": "approval_required", "sql": payload.get("sql"), "reason": payload.get("reason"), "thread_id": thread_id})}
+                    return
+                for event in _events_from_update(node, update):
+                    yield {"data": json.dumps(event, default=str)}
+        yield {"data": json.dumps({"type": "done"})}
+    except Exception as exc:  # noqa: BLE001 - surface to the client
+        logger.exception("agent stream failed")
+        yield {"data": json.dumps({"type": "error", "message": str(exc)})}
+
+
+@app.get("/api/ask")
+async def ask(question: str, thread_id: str):
+    """Stream the agent's run for a question as SSE."""
+    return EventSourceResponse(_agent_sse({"question": (question or "").strip()}, thread_id))
+
+
+@app.get("/api/resume")
+async def resume(thread_id: str, approved: bool = False):
+    """Resume a run that paused for human approval."""
+    return EventSourceResponse(_agent_sse(Command(resume={"approved": approved}), thread_id))
 
 
 @app.on_event("shutdown")
