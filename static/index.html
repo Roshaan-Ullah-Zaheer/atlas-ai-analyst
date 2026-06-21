@@ -21,6 +21,16 @@
 </head>
 
 <body>
+  <!-- ============ BOOT LOADER ============ -->
+  <div id="boot" class="boot">
+    <div class="boot-inner">
+      <div class="boot-ring"><div class="boot-mark">A</div></div>
+      <div class="boot-title grad-text">Atlas</div>
+      <div class="boot-sub">Connecting the agents to your data…</div>
+      <div class="boot-dots"><span></span><span></span><span></span></div>
+    </div>
+  </div>
+
   <div class="app">
 
     <!-- ============ HEADER ============ -->
@@ -53,7 +63,8 @@
         <div class="sidebar-section">
           <div class="sidebar-head">Schema</div>
           <div id="schema-list" class="schema-list">
-            <div class="muted small">Loading schema…</div>
+            <div class="sk-row"></div><div class="sk-row"></div><div class="sk-row"></div>
+            <div class="sk-row"></div><div class="sk-row"></div><div class="sk-row"></div>
           </div>
         </div>
         <div class="sidebar-section">
@@ -71,7 +82,7 @@
           <!-- Empty state -->
           <div id="empty" class="empty">
             <div class="empty-mark">A</div>
-            <h1>Ask your business data anything</h1>
+            <h1>Ask your business data <span class="grad-text">anything</span></h1>
             <p class="muted">A team of agents plans, writes SQL, runs it through an MCP server, checks its own work, and answers — with a chart and the exact query it ran. Pick a question on the left or type your own.</p>
           </div>
           <!-- Turns injected here -->

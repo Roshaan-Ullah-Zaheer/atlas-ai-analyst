@@ -13,9 +13,11 @@
 
   const SAMPLES = [
     'Total revenue by customer segment from completed orders',
-    'Top 5 products by units sold',
-    'How many high-priority support tickets are still open?',
-    'Which regions have the most churned customers?',
+    'Top 10 products by revenue, with their category',
+    'Which sales reps generated the most revenue?',
+    'Average review rating by product category',
+    'Which shipping carrier has the slowest average delivery time?',
+    'Monthly revenue trend over the last 12 months',
     'What is our refund policy and how long do refunds take?',
     'Show me the email addresses of customers who churned',
   ];
@@ -41,6 +43,12 @@
   }
   const cssVar = (n) => getComputedStyle(document.documentElement).getPropertyValue(n).trim();
 
+  /* ---------- Boot loader ---------- */
+  function hideBoot() {
+    const b = $('#boot');
+    if (b && !b.classList.contains('hidden')) b.classList.add('hidden');
+  }
+
   /* ---------- Schema explorer ---------- */
   async function loadSchema() {
     try {
@@ -55,7 +63,11 @@
         d.innerHTML = `<summary>${esc(t.name)}<span class="cnt">${t.columns.length}</span></summary><div class="schema-cols">${cols}</div>`;
         wrap.appendChild(d);
       });
-    } catch (e) { $('#schema-list').innerHTML = '<div class="muted small">Schema unavailable.</div>'; }
+    } catch (e) {
+      $('#schema-list').innerHTML = '<div class="muted small">Schema unavailable.</div>';
+    } finally {
+      hideBoot();
+    }
   }
 
   function renderSamples() {
@@ -221,24 +233,31 @@
     return `<div class="result-table-wrap"><table class="result"><thead><tr>${head}</tr></thead><tbody>${rows}</tbody></table></div>`;
   }
 
-  /* ---------- Chart (monochrome / emerald) ---------- */
+  /* ---------- Chart (vibrant aurora palette) ---------- */
   function drawChart(canvas, spec, result) {
     const rows = result.rows || [];
     const labels = rows.map((r) => r[spec.x]);
     const values = rows.map((r) => Number(r[spec.y]));
-    const accent = cssVar('--accent') || '#10b981';
-    const grid = cssVar('--border') || '#262629';
+    const accent = cssVar('--accent') || '#6366f1';
+    const grid = cssVar('--border') || '#20232f';
     const text = cssVar('--muted') || '#888';
-    const palette = [accent, '#52525b', '#a1a1aa', '#3f3f46', '#71717a', '#d4d4d8'];
+    const palette = ['#8b5cf6', '#6366f1', '#22d3ee', '#34d399', '#f59e0b', '#f472b6', '#60a5fa', '#a78bfa', '#2dd4bf', '#fb7185'];
+    let lineFill = 'transparent';
+    if (spec.type === 'line' && canvas.getContext) {
+      const g = canvas.getContext('2d').createLinearGradient(0, 0, 0, canvas.height || 300);
+      g.addColorStop(0, 'rgba(99,102,241,0.35)'); g.addColorStop(1, 'rgba(34,211,238,0.02)');
+      lineFill = g;
+    }
     const cfg = {
       type: spec.type === 'pie' ? 'pie' : spec.type,
       data: {
         labels,
         datasets: [{
           label: spec.y, data: values,
-          backgroundColor: spec.type === 'line' ? 'transparent' : (spec.type === 'pie' ? labels.map((_, i) => palette[i % palette.length]) : accent),
-          borderColor: accent, borderWidth: spec.type === 'line' ? 2 : 0, tension: 0.3,
-          pointBackgroundColor: accent, borderRadius: 4,
+          backgroundColor: spec.type === 'line' ? lineFill : labels.map((_, i) => palette[i % palette.length]),
+          borderColor: spec.type === 'line' ? accent : 'transparent', borderWidth: spec.type === 'line' ? 2.5 : 0,
+          tension: 0.35, fill: spec.type === 'line',
+          pointBackgroundColor: accent, pointRadius: spec.type === 'line' ? 2.5 : 0, borderRadius: 6,
         }],
       },
       options: {
@@ -297,5 +316,6 @@
   initTheme();
   loadSchema();
   renderSamples();
+  setTimeout(hideBoot, 9000); // safety net so the loader never sticks
   $('#ask-form').addEventListener('submit', (e) => { e.preventDefault(); ask($('#q').value); });
 })();

@@ -104,7 +104,24 @@ The agent never touches the database directly — it goes through the **MCP serv
 
 ## 🗃️ Sample dataset
 
-A small, clean e-commerce dataset (generic business data): `customers`, `products`, `orders`, `order_items`, `support_tickets`, plus company `documents` (policies, FAQs, product guides) embedded for semantic search — so anyone can try it instantly. Try *"revenue by customer segment"*, *"top products by units sold"*, *"what's our refund policy?"*, or *"show me churned customers' emails"* (watch it pause for approval).
+A realistic, **16-table** business warehouse (~18k rows of generic e-commerce + operations data) so the demo shows real analytical complexity: `categories`, `suppliers`, `warehouses`, `employees`, `customers`, `products`, `inventory`, `marketing_campaigns`, `orders`, `order_items`, `payments`, `shipments`, `returns`, `reviews`, and `support_tickets` — plus company `documents` (policies, FAQs, product guides, release notes) embedded for semantic search. Everything is loaded automatically, so anyone can try it instantly. Some questions to try:
+
+- *"Total revenue by customer segment from completed orders"*
+- *"Top 10 products by revenue, with their category"* (joins items → products → categories)
+- *"Which sales reps generated the most revenue?"* (joins orders → employees)
+- *"Which shipping carrier has the slowest average delivery time?"*
+- *"Average review rating by product category"*
+- *"What is our refund policy and how long do refunds take?"* (semantic document search)
+- *"Show me the email addresses of customers who churned"* — watch it **pause for approval** before reading personal data
+
+## 🔌 Use it on your own data
+
+The demo runs on a sample database so anyone can try it, but the architecture is built to point at a real one:
+
+- **Swap one setting.** Change `DATABASE_URL` to a client's PostgreSQL database — Atlas introspects the live schema automatically and starts answering questions about it. No code changes for SQL analytics.
+- **Read-only by design.** Every query is `SELECT`-only, time-boxed, and row-capped, with human approval before anything sensitive — it analyzes data, never modifies it.
+- **Document Q&A is a load-once step.** Semantic search works on text you embed into the `documents` table (a client's policies, FAQs, contracts); the SQL side needs no setup.
+- **Provider-agnostic.** Gemini/Groq on the free demo; the same code runs on Claude/OpenAI and managed pgvector in production by changing one file.
 
 ## 🔧 Run locally
 
