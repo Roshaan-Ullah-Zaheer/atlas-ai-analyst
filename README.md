@@ -22,7 +22,7 @@ license: mit
 [![LangSmith](https://img.shields.io/badge/Observability-LangSmith-FF6F61)](https://smith.langchain.com/)
 [![License: MIT](https://img.shields.io/badge/License-MIT-green.svg)](LICENSE)
 
-### 🔗 [**Live demo**](https://huggingface.co/spaces/RoshaanUllahZaheer/atlas) — a multi-agent analyst you can watch think
+### 🔗 [**Live demo**](https://roshaanullahzaheer-atlas.hf.space) — a multi-agent analyst you can watch think
 
 </div>
 
@@ -98,7 +98,7 @@ The agent never touches the database directly — it goes through the **MCP serv
 
 ## 📸 Screenshots
 
-> 🎬 See it live: **[Atlas on Hugging Face Spaces](https://huggingface.co/spaces/RoshaanUllahZaheer/atlas)**.
+> 🎬 See it live: **[Atlas on Hugging Face Spaces](https://roshaanullahzaheer-atlas.hf.space)**.
 
 <!-- Screenshot gallery added after deploy. -->
 
