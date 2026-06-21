@@ -100,7 +100,21 @@ The agent never touches the database directly — it goes through the **MCP serv
 
 > 🎬 See it live: **[Atlas on Hugging Face Spaces](https://roshaanullahzaheer-atlas.hf.space)**.
 
-<!-- Screenshot gallery added after deploy. -->
+**The workspace** — a schema explorer for all 16 tables and starter questions generated from your live schema.
+
+![Atlas workspace and schema explorer](docs/01-home.png)
+
+**The live agent pipeline** — plan → SQL → safety check → execution, streamed step by step.
+
+![Atlas agent pipeline running](docs/02-pipeline.png)
+
+**A charted answer** — a direct headline, the breakdown, and a plain-English insight, with the right chart.
+
+![Atlas charted answer](docs/03-answer.png)
+
+**The glass-box trust panel** — the exact SQL it ran, the result rows, and the validation verdict.
+
+![Atlas trust panel with SQL and results](docs/04-trust.png)
 
 ## 🗃️ Sample dataset
 
