@@ -114,6 +114,15 @@
   }
 
   /* ---------- A turn ---------- */
+  // Status lines shown in the warm-up placeholder until the first real step
+  // streams in (also reassures the user during the free-tier cold start).
+  const WARMUP_MSGS = [
+    'Spinning up the agents — planning your query…',
+    'Thinking through your question…',
+    'Still working — the model is responding…',
+    'Almost there — the free tier can be slow to wake…',
+  ];
+
   function newTurn(question) {
     $('#empty')?.remove();
     const turn = el('div', 'turn');
@@ -122,11 +131,31 @@
     pipe.innerHTML = '<div class="pipeline-head"><span class="spinner"></span><span>Agent pipeline</span><span class="toggle"></span></div><div class="steps"></div>';
     turn.appendChild(pipe);
     $('#thread').appendChild(turn);
+    const steps = pipe.querySelector('.steps');
+    steps.innerHTML =
+      '<div class="warmup"><div class="warmup-label"><span class="spinner"></span>' +
+      `<span class="wtxt">${WARMUP_MSGS[0]}</span></div>` +
+      '<div class="sk-step"></div><div class="sk-step"></div><div class="sk-step"></div></div>';
+    const t = { question, root: turn, pipe, steps, ctx: {}, lastStep: null, warmTimer: null };
+    let mi = 0;
+    t.warmTimer = setInterval(() => {
+      const lbl = steps.querySelector('.warmup .wtxt');
+      if (!lbl) { clearInterval(t.warmTimer); t.warmTimer = null; return; }
+      mi = Math.min(mi + 1, WARMUP_MSGS.length - 1);
+      lbl.textContent = WARMUP_MSGS[mi];
+    }, 4500);
     scrollDown();
-    return { question, root: turn, pipe, steps: pipe.querySelector('.steps'), ctx: {}, lastStep: null };
+    return t;
+  }
+
+  function clearWarmup(turn) {
+    if (turn.warmTimer) { clearInterval(turn.warmTimer); turn.warmTimer = null; }
+    const w = turn.steps && turn.steps.querySelector('.warmup');
+    if (w) w.remove();
   }
 
   function addStep(turn, key, detailHtml) {
+    clearWarmup(turn);
     if (turn.lastStep) turn.lastStep.classList.replace('active', 'done');
     const s = el('div', 'step active');
     s.innerHTML = `<div class="dot"></div><div class="step-body"><div class="step-title">${esc(STEP_TITLES[key] || key)}</div>${detailHtml ? `<div class="step-detail">${detailHtml}</div>` : ''}</div>`;
@@ -196,6 +225,7 @@
 
   /* ---------- Approval card ---------- */
   function renderApproval(turn, ev) {
+    clearWarmup(turn);
     if (turn.lastStep) turn.lastStep.classList.replace('active', 'done');
     const card = el('div', 'approval');
     card.innerHTML =
@@ -328,6 +358,7 @@
   }
 
   function endRun(turn) {
+    clearWarmup(turn);
     if (turn.es) { turn.es.close(); turn.es = null; }
     setBusy(false);
   }
