@@ -50,22 +50,42 @@
   }
 
   /* ---------- Schema explorer ---------- */
-  async function loadSchema() {
+  function renderSchema(data) {
+    const wrap = $('#schema-list'); wrap.innerHTML = '';
+    data.tables.forEach((t) => {
+      const d = el('details', 'schema-table');
+      const cols = t.columns.map((c) => {
+        const key = c.pk ? '<span class="key">PK</span>' : c.fk ? `<span class="key">FK</span>` : '';
+        return `<div class="schema-col"><span>${esc(c.name)}</span><span class="ty">${esc(c.type)}</span>${key}</div>`;
+      }).join('');
+      d.innerHTML = `<summary>${esc(t.name)}<span class="cnt">${t.columns.length}</span></summary><div class="schema-cols">${cols}</div>`;
+      wrap.appendChild(d);
+    });
+  }
+
+  // Retries with backoff so a cold start (sleeping Space / Neon) self-heals
+  // instead of getting stuck on "Schema unavailable".
+  async function loadSchema(attempt = 0) {
+    const MAX = 6;
     try {
-      const data = await (await fetch('/api/schema')).json();
-      const wrap = $('#schema-list'); wrap.innerHTML = '';
-      data.tables.forEach((t) => {
-        const d = el('details', 'schema-table');
-        const cols = t.columns.map((c) => {
-          const key = c.pk ? '<span class="key">PK</span>' : c.fk ? `<span class="key">FK</span>` : '';
-          return `<div class="schema-col"><span>${esc(c.name)}</span><span class="ty">${esc(c.type)}</span>${key}</div>`;
-        }).join('');
-        d.innerHTML = `<summary>${esc(t.name)}<span class="cnt">${t.columns.length}</span></summary><div class="schema-cols">${cols}</div>`;
-        wrap.appendChild(d);
-      });
+      const res = await fetch('/api/schema', { cache: 'no-store' });
+      if (!res.ok) throw new Error('HTTP ' + res.status);
+      const data = await res.json();
+      if (!data || !Array.isArray(data.tables) || !data.tables.length) throw new Error('empty');
+      renderSchema(data);
+      hideBoot();
     } catch (e) {
-      $('#schema-list').innerHTML = '<div class="muted small">Schema unavailable.</div>';
-    } finally {
+      if (attempt === 1) hideBoot(); // don't trap the user behind the loader while it wakes
+      if (attempt < MAX) { setTimeout(() => loadSchema(attempt + 1), 1500 + attempt * 1200); return; }
+      const wrap = $('#schema-list');
+      wrap.innerHTML = '<div class="muted small">Waking the server up… this can take a moment on the free tier.</div>';
+      const retry = el('button', 'act', 'Retry');
+      retry.style.marginTop = '10px';
+      retry.addEventListener('click', () => {
+        wrap.innerHTML = '<div class="sk-row"></div><div class="sk-row"></div><div class="sk-row"></div>';
+        loadSchema(0);
+      });
+      wrap.appendChild(retry);
       hideBoot();
     }
   }
