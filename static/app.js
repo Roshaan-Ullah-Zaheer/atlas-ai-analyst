@@ -127,8 +127,8 @@
     $('#empty')?.remove();
     const turn = el('div', 'turn');
     turn.appendChild(el('div', 'q-bubble', esc(question)));
-    const pipe = el('div', 'pipeline');
-    pipe.innerHTML = '<div class="pipeline-head"><span class="spinner"></span><span>Agent pipeline</span><span class="toggle"></span></div><div class="steps"></div>';
+    const pipe = el('div', 'pipeline running');
+    pipe.innerHTML = '<div class="pipeline-head"><span class="ok-check">✓</span><span>Agent pipeline</span><span class="toggle"></span></div><div class="steps"></div>';
     turn.appendChild(pipe);
     $('#thread').appendChild(turn);
     const steps = pipe.querySelector('.steps');
@@ -165,8 +165,8 @@
 
   function finishPipeline(turn) {
     if (turn.lastStep) turn.lastStep.classList.replace('active', 'done');
+    turn.pipe.classList.remove('running'); // reveal the header as the collapse toggle
     const head = turn.pipe.querySelector('.pipeline-head');
-    head.querySelector('.spinner').replaceWith(el('span', '', '✓'));
     head.classList.add('collapsed');
     head.querySelector('.toggle').textContent = 'hide';
     head.style.cursor = 'pointer';
