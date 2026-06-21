@@ -11,13 +11,11 @@
   const esc = (s) => { const d = document.createElement('div'); d.textContent = s == null ? '' : String(s); return d.innerHTML; };
   const uid = () => 't' + Math.random().toString(36).slice(2, 10);
 
-  const SAMPLES = [
+  // Shown instantly; replaced by schema-aware questions from /api/samples.
+  const FALLBACK_SAMPLES = [
     'Total revenue by customer segment from completed orders',
     'Top 10 products by revenue, with their category',
     'Which sales reps generated the most revenue?',
-    'Average review rating by product category',
-    'Which shipping carrier has the slowest average delivery time?',
-    'Monthly revenue trend over the last 12 months',
     'What is our refund policy and how long do refunds take?',
     'Show me the email addresses of customers who churned',
   ];
@@ -90,13 +88,23 @@
     }
   }
 
-  function renderSamples() {
-    const wrap = $('#samples');
-    SAMPLES.forEach((q) => {
+  function paintSamples(list) {
+    const wrap = $('#samples'); wrap.innerHTML = '';
+    list.forEach((q) => {
       const b = el('button', 'sample', esc(q));
       b.addEventListener('click', () => { if (!busy) ask(q); });
       wrap.appendChild(b);
     });
+  }
+
+  async function renderSamples() {
+    paintSamples(FALLBACK_SAMPLES); // instant, so the sidebar is never empty
+    try {
+      const res = await fetch('/api/samples', { cache: 'no-store' });
+      if (!res.ok) return;
+      const data = await res.json();
+      if (data && Array.isArray(data.questions) && data.questions.length) paintSamples(data.questions);
+    } catch (e) { /* keep the curated fallback */ }
   }
 
   /* ---------- Markdown answer + citations ---------- */

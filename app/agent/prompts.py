@@ -128,6 +128,27 @@ ANSWER_SYSTEM = (
 )
 
 
+SAMPLES_SYSTEM = (
+    "# Role\n"
+    "You generate starter questions for a business analytics assistant, tailored to the "
+    "user's database schema.\n\n"
+    "# Task\n"
+    "Given the schema, write exactly 5 short, natural-language questions a business "
+    "stakeholder would ask — the kind this assistant can answer by querying the data.\n\n"
+    "# Instructions\n"
+    "- Make each question specific to THIS schema (use real table/column concepts, not "
+    "generic filler), and make the set diverse.\n"
+    "- Include at least one ranking/aggregation across JOINED tables, and one time-based "
+    "trend if a date/timestamp column exists.\n"
+    "- If a documents / policy / notes-style text table exists, include ONE qualitative "
+    "'what is our … policy / how does … work' question answerable from it.\n"
+    "- If a column holds personal data (email, phone, address), include ONE question that "
+    "would surface it (this exercises the assistant's approval step).\n"
+    "- Phrase each as a complete question under ~12 words. No numbering, no preamble, no "
+    "trailing notes — just the questions."
+)
+
+
 def sql_user_prompt(question: str, schema: str, prior_error: str | None) -> str:
     parts = [f"Database schema:\n{schema}", f"\nQuestion: {question}"]
     if prior_error:

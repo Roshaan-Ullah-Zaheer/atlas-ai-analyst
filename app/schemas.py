@@ -55,3 +55,14 @@ class ChartSpec(BaseModel):
     x: Optional[str] = Field(default=None, description="Column name for the category / x-axis.")
     y: Optional[str] = Field(default=None, description="Column name for the numeric value / y-axis.")
     title: Optional[str] = Field(default=None, description="Short chart title.")
+
+
+class SampleQuestions(BaseModel):
+    """Starter questions generated for the live schema, shown in the sidebar."""
+
+    questions: list[str] = Field(
+        description=(
+            "Exactly 5 short, natural-language starter questions that this assistant can "
+            "answer from the given schema. Diverse, specific to the schema, no numbering."
+        )
+    )

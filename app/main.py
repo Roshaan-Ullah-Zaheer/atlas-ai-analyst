@@ -26,9 +26,11 @@ from fastapi.staticfiles import StaticFiles
 from langgraph.types import Command
 from sse_starlette.sse import EventSourceResponse
 
-from . import config, db
+from . import config, db, llm
+from .agent import prompts
 from .agent.graph import graph
 from .mcp_server import mcp
+from .schemas import SampleQuestions
 
 logging.basicConfig(level=logging.INFO, format="%(asctime)s %(levelname)s [%(name)s] %(message)s")
 logger = logging.getLogger("atlas")
@@ -55,6 +57,43 @@ async def health() -> dict:
 async def api_schema() -> JSONResponse:
     """The database schema, for the frontend's schema explorer."""
     return JSONResponse(await db.get_schema())
+
+
+# Starter questions, generated once from the live schema and cached for the
+# container's lifetime (one LLM call, not one per visit). Falls back to a
+# curated set if generation fails.
+_samples_cache: list[str] | None = None
+
+FALLBACK_SAMPLES = [
+    "Total revenue by customer segment from completed orders",
+    "Top 10 products by revenue, with their category",
+    "Which sales reps generated the most revenue?",
+    "What is our refund policy and how long do refunds take?",
+    "Show me the email addresses of customers who churned",
+]
+
+
+@app.get("/api/samples")
+async def api_samples() -> JSONResponse:
+    """LLM-generated starter questions tailored to the live schema (cached)."""
+    global _samples_cache
+    if _samples_cache:
+        return JSONResponse({"questions": _samples_cache, "generated": True})
+    try:
+        schema_text = db.render_schema_text(await db.get_schema())
+        result: SampleQuestions = await llm.get_structured(SampleQuestions).ainvoke(
+            [
+                ("system", prompts.SAMPLES_SYSTEM),
+                ("human", f"Schema:\n{schema_text}\n\nGenerate the 5 starter questions."),
+            ]
+        )
+        qs = [q.strip() for q in result.questions if q and q.strip()][:5]
+        if len(qs) >= 3:
+            _samples_cache = qs
+            return JSONResponse({"questions": qs, "generated": True})
+    except Exception:  # noqa: BLE001 - degrade gracefully to the curated set
+        logger.exception("sample question generation failed")
+    return JSONResponse({"questions": FALLBACK_SAMPLES, "generated": False})
 
 
 def _events_from_update(node: str, update: dict) -> list[dict]:
