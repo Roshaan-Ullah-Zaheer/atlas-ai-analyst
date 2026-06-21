@@ -16,6 +16,7 @@ from __future__ import annotations
 
 import json
 import logging
+import re
 from typing import Any, TypedDict
 
 from langgraph.checkpoint.memory import MemorySaver
@@ -54,13 +55,18 @@ class AgentState(TypedDict, total=False):
 # ---------------------------------------------------------------------------
 # Guardrail heuristic for human-in-the-loop
 # ---------------------------------------------------------------------------
+# Personal / contact data — reading it should pause for human approval.
+_PII = re.compile(r"\b(email|phone|address|ssn|social_security|passport|password|date_of_birth|dob)\b",
+                  re.IGNORECASE)
+
+
 def _is_sensitive(sql: str) -> tuple[bool, str]:
     low = sql.lower()
-    if "email" in low:
-        return True, "This query reads customer email addresses (personal data)."
-    has_agg = any(tok in low for tok in ("count(", "sum(", "avg(", "min(", "max(", "group by"))
-    if not has_agg and " limit " not in low:
-        return True, "This query returns raw rows with no aggregation or row limit."
+    if _PII.search(low):
+        return True, "This query reads personal contact details (e.g. email addresses) — personal data."
+    # A raw `SELECT *` with no row limit could pull an entire table verbatim.
+    if re.search(r"select\s+\*", low) and " limit " not in low:
+        return True, "This query selects entire raw rows (SELECT *) with no row limit."
     return False, ""
 
 
